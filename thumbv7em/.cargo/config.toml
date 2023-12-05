@@ -1,0 +1,8 @@
+[build]
+target = "thumbv7em-none-eabi"
+
+[target.'cfg(all(target_arch = "arm", target_os = "none"))']
+runner = "probe-run --chip nrf52840"
+
+[env]
+DEFMT_LOG = "trace"

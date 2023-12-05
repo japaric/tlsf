@@ -1,0 +1,39 @@
+[package]
+edition = "2021"
+name = "thumbv7m"
+publish = false
+version = "0.1.0"
+
+[dependencies]
+cortex-m = { version = "0.7.7", features = ["critical-section-single-core", "inline-asm"] }
+tlsf = { path = ".." }
+
+[dev-dependencies]
+cortex-m-rt = "0.7.3"
+defmt = "0.3.5"
+defmt-rtt = "0.4.0"
+panic-probe = "0.3.1"
+rand_core = "0.6.4"
+rand_xorshift = "0.3.0"
+spin = { version = "0.9.8", default-features = false, features = ["spin_mutex"] }
+
+[profile.dev]
+opt-level = 'z'
+
+[profile.release]
+codegen-units = 1
+debug = true
+lto = 'fat'
+
+[workspace]
+
+# make `clippy --all-targets` work
+[lib]
+bench = false
+doctest = false
+test = false
+
+[[bin]]
+name = "no-panics"
+test = false
+bench = false

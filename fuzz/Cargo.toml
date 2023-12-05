@@ -1,0 +1,37 @@
+[package]
+name = "tlsf-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = { version = "0.4.0", features = ["arbitrary-derive"] }
+
+[dependencies.tlsf]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "initialize"
+path = "fuzz_targets/initialize.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "memalign"
+path = "fuzz_targets/memalign.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "free"
+path = "fuzz_targets/free.rs"
+test = false
+doc = false

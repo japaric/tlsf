@@ -1,0 +1,6 @@
+/.envrc
+/Cargo.lock
+/rust-toolchain.toml
+/shell.nix
+/target
+/thumbv7em/target

@@ -1,0 +1,29 @@
+[package]
+categories = ["embedded", "memory-management", "no-std"]
+description = "An implementation of the Two-Level Segregated Fit (TLSF) allocator with optimized memory footprint"
+documentation = "https://docs.rs/tlsf"
+edition = "2021"
+keywords = ["allocator", "tlsf", "constant-time", "real-time"]
+license = "MIT OR Apache-2.0"
+name = "tlsf"
+readme = "README.md"
+repository = "https://github.com/japaric/tlsf"
+version = "1.0.0"
+
+[dependencies]
+embed-doc-image = { version = "0.1.4", optional = true }
+sptr = "0.3.2"
+
+[dev-dependencies]
+cov-mark = "1.1.0"
+rand = "0.8.5"
+rand_xorshift = "0.3.0"
+
+[features]
+internal-doc-images = ["dep:embed-doc-image"] # INTERNAL; exempt from semver guarantees
+
+[package.metadata.docs.rs]
+features = ["internal-doc-images"]
+
+[workspace]
+members = [".", "xtask"]
