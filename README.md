@@ -52,6 +52,26 @@ assert!(alloc.len() >= 1);
 alloc.iter_mut().for_each(|mu| { mu.write(42); });
 ```
 
+When alignment is not important, the `malloc` method can be used.
+The returned block will have a minimal alignment of 4 bytes.
+
+```
+use core::alloc::Layout;
+use core::mem::MaybeUninit;
+use core::num::NonZeroU16;
+
+use tlsf::Tlsf;
+
+let mut tlsf = Tlsf::<1>::empty();
+let mut memory = [MaybeUninit::uninit(); 256];
+tlsf.initialize(&mut memory);
+
+let size = NonZeroU16::new(4).unwrap();
+let alloc: &mut [MaybeUninit<u32>] = tlsf.malloc(size).unwrap();
+assert!(alloc.len() >= 1);
+alloc.iter_mut().for_each(|mu| { mu.write(42); });
+```
+
 The allocator tracks the lifetime of the initial memory pool and allocations cannot outlive it. This
 code does not compile
 
@@ -115,7 +135,9 @@ Benchmark configuration
 
 ## Binary ("Flash") size
 
-~1,650 B (`.text` section)
+~1,594 B (`.text` section) if only `memalign` is used
+
+~1,440 B (`.text` section) if only `malloc` is used
 
 Measured using
 
@@ -128,7 +150,7 @@ fn _start() -> [usize; 3] {
     [
         Tlsf::<2>::free as usize,
         Tlsf::<2>::initialize as usize,
-        Tlsf::<2>::memalign as usize,
+        Tlsf::<2>::memalign as usize, // OR malloc
     ]
 }
 ```
@@ -136,15 +158,21 @@ fn _start() -> [usize; 3] {
 ```text
 $ size -A binary
 section           size     addr
-.ARM.exidx          16    65748
-.text             1650   131300
+.ARM.exidx           16    65748
+.text              1594   131300
 .debug_aranges       0        0
 ```
 
+Note that these measurements used optimization for *speed* and
+are meant to give you an idea of the binary footprint of the library.
+Applying optimizations for size will obviously result in a smaller footprint.
+
 ## Execution time
 
-workload: N random-sized (< `MAX_ALLOC_SIZE`) allocations with random alignments (<= 32 B) until OOM
-followed by N deallocations in reverse order
+workloads:
+
+- `memalign`: N random-sized (< `MAX_ALLOC_SIZE`) allocations with random alignments (<= 32 B) until
+  OOM
 
 | Operation         | min | max |
 | ----------------- | --- | --- |
@@ -156,8 +184,21 @@ followed by N deallocations in reverse order
 "FAIL" indicates that `memalign` returned `None`; "OK" indicates that it returned `Some`; "ALL"
 accounts for both cases.
 
-![][histograms]
-![](/images/histograms.svg)
+![][memalign-histograms]
+![](/images/memalign-histograms.svg)
+
+- `malloc`: N random-sized (< `MAX_ALLOC_SIZE`) allocations until OOM followed by N deallocations in
+  reverse order
+
+| Operation       | min | max |
+| --------------- | --- | --- |
+| `malloc` (ALL)  | 91  | 292 |
+| `malloc` (FAIL) | 91  | 103 |
+| `malloc` (OK)   | 173 | 292 |
+| `free`          | 98  | 237 |
+
+![][malloc-histograms]
+![](/images/malloc-histograms.svg)
 
 The code used to make the measurements can be found in the `thumbv7em` directory of the project's
 repository.
