@@ -84,6 +84,10 @@ fn run_ci_install() -> Result<()> {
         .args(["component", "add"])
         .args(components))?;
 
+    if rustversion::cfg!(nightly) {
+        run(Command::new("cargo").args(["install", "cargo-fuzz"]))?;
+    }
+
     Ok(())
 }
 
