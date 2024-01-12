@@ -2,7 +2,10 @@
 //!
 #![cfg_attr(feature = "internal-doc-images",
 cfg_attr(all(),
-doc = ::embed_doc_image::embed_image!("histograms", "images/histograms.svg")))]
+doc = ::embed_doc_image::embed_image!("memalign-histograms", "images/memalign-histograms.svg")))]
+#![cfg_attr(feature = "internal-doc-images",
+cfg_attr(all(),
+doc = ::embed_doc_image::embed_image!("malloc-histograms", "images/malloc-histograms.svg")))]
 #![cfg_attr(
     not(feature = "internal-doc-images"),
     doc = "**Doc images not enabled**. Compile with feature `doc-images` and Rust version >= 1.54 \

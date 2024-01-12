@@ -1,8 +1,9 @@
 use core::alloc::Layout;
 use core::mem::MaybeUninit;
 
-use crate::block::{Anchor, FreeBlock, UsedBlock};
+use crate::block::{Anchor, FreeBlock};
 use crate::header::Header;
+use crate::ops::util;
 use crate::{consts, Tlsf};
 
 impl<'a, const FLL: usize> Tlsf<'a, FLL> {
@@ -29,7 +30,7 @@ impl<const FLL: usize> Header<FLL> {
         let size = layout.size().try_into().ok()?;
         let align = layout.align().try_into().ok()?;
 
-        let size = round_up_block_size(size)?;
+        let size = util::round_up_block_size(size)?;
         let worst_case_size = worst_case_size(size, align)?;
         let mut block = self.pop(anchor, worst_case_size)?;
 
@@ -76,34 +77,6 @@ impl<const FLL: usize> Header<FLL> {
             block
         }
     }
-
-    unsafe fn adjust_free_block_size<'a>(
-        &mut self,
-        anchor: Anchor<'a>,
-        block: FreeBlock<'a>,
-        size: u16,
-    ) -> FreeBlock<'a> {
-        if u32::from(block.usable_size()) >= u32::from(size) + u32::from(FreeBlock::HEADER_SIZE) {
-            #[cfg(all(test, not(miri)))]
-            cov_mark::hit!(alloc_adjust_size);
-
-            let at = usize::from(UsedBlock::HEADER_SIZE) + usize::from(size);
-            let new = unsafe { anchor.split(&block, at) };
-            unsafe { self.push(anchor, new) }
-        }
-
-        block
-    }
-}
-
-fn round_up_block_size(num: u16) -> Option<u16> {
-    let multiple = consts::BLOCK_ALIGN as u16;
-    let rem = num % multiple;
-    if rem == 0 {
-        Some(num)
-    } else {
-        u16::try_from((num as u32) + (multiple as u32 - rem as u32)).ok()
-    }
 }
 
 // in the worst case scenario the block will be already `align`-byte aligned
@@ -124,6 +97,7 @@ mod tests {
     use core::mem::MaybeUninit;
 
     use super::*;
+    use crate::block::UsedBlock;
 
     #[test]
     fn worst_case_size() {
@@ -152,14 +126,14 @@ mod tests {
     #[test]
     fn no_split() {
         let mut tlsf = Tlsf::<1>::empty();
-        let mut memory = [MaybeUninit::uninit(); 4];
+        let mut memory = [MaybeUninit::uninit(); 3];
         tlsf.initialize(&mut memory);
 
         let [free] = tlsf.free_blocks().try_into().unwrap();
-        assert_eq!(8, free.usable_size());
+        assert_eq!(4, free.usable_size());
 
         let alloc = tlsf.memalign(Layout::new::<u8>()).unwrap();
-        assert_eq!(2, alloc.len());
+        assert_eq!(1, alloc.len());
         assert!(tlsf.free_blocks().is_empty());
     }
 

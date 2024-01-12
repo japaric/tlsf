@@ -2,6 +2,7 @@
 
 use core::alloc::Layout;
 use core::mem;
+use core::num::NonZeroU16;
 use core::ptr::NonNull;
 
 use libfuzzer_sys::arbitrary::Arbitrary;
@@ -17,6 +18,16 @@ fuzz_target!(|actions: Vec<Action>| {
     let mut allocated = 0;
     for action in actions {
         match action {
+            Action::Malloc { size } => {
+                if let Some(alloc) = tlsf.malloc(size) {
+                    allocated += mem::size_of_val(alloc);
+
+                    allocs.push(alloc);
+
+                    check_stats(&tlsf, allocated, allocs.len());
+                }
+            }
+
             Action::Memalign { size, align_log } => {
                 if let Some(align) = 1usize.checked_shl(align_log.into()) {
                     let size = size.into();
@@ -63,6 +74,7 @@ fn check_stats(tlsf: &Tlsf<11>, allocated: usize, allocs_len: usize) {
 
 #[derive(Arbitrary, Debug)]
 enum Action {
-    Memalign { size: u16, align_log: u8 },
     Free { index: usize },
+    Malloc { size: NonZeroU16 },
+    Memalign { size: u16, align_log: u8 },
 }
