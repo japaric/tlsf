@@ -35,3 +35,9 @@ name = "free"
 path = "fuzz_targets/free.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "malloc"
+path = "fuzz_targets/malloc.rs"
+test = false
+doc = false
