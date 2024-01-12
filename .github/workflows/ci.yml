@@ -24,5 +24,8 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
 
+      - name: Install required components and targets
+        run: cargo xtask ci-install
+
       - name: Run CI
         run: cargo xtask ci
